@@ -3,3 +3,12 @@ for i in *.fq.gz
 do java -Xmx5G -Xmx5G -jar ./Trimmomatic-0.33/trimmomatic-0.33.jar SE -phred33 $i trimmed_$i ILLUMINACLIP:./Trimmomatic-0.33/adapters/TruSeq2-SE.fa:2:30:10
 done
 
+### Index reference genome (Zosterops.fsa)
+bwa index Zosterops.fsa
+
+### Perform alignment with BWA MEM
+##For GBS data (single end sequencing)
+
+
+
+## For paired-end sequencing (shotgun sequencing + Pooled RAD-sequencing data)
