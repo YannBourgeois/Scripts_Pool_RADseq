@@ -8,7 +8,9 @@ bwa index Zosterops.fsa
 
 ### Perform alignment with BWA MEM
 ##For GBS data (single end sequencing)
-
+for i in *.fq.gz
+bwa mem Zosterops_genome.fsa -t 8  $i -M | samtools view -q 20 -bS - | samtools sort -  $i
+done
 
 
 ## For paired-end sequencing (shotgun sequencing + Pooled RAD-sequencing data)
