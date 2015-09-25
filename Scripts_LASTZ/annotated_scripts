@@ -1,0 +1,50 @@
+### Run LASTZ
+### Note: I splitted the zebra finch genome in 13 files, zebra_1.fa to zebra_12.fa and chr13.fa. Scaffolds are found in Zosterops_genome.fsa. Options for LASTZ are the ones recommended for close species.
+
+./lastz zebra_1.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_1 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz chr13.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_2 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_10.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_3 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_11.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_4 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_12.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_5 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_1.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_6 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_2.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_7 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_3.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_8 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_4.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_9 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_5.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_10 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_6.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_11 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_7.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_12 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_8.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_13 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+./lastz zebra_9.fa[unmask][multiple] Zosterops_genome.fsa --ambiguous=iupac --output=essai_14 --masking=254 --hspthresh=4500 --gappedthresh=3000 --ydrop=15000 --chain --notransition --seed=12of19 --format=axt
+
+###Concatenation of all result files:
+cat essai_* > essai_all.out
+
+## Retrieve the scores from the output files:
+grep scaffold essai_all.out > alignment_results.out
+
+
+### In R
+
+table<-read.table("alignment_results.out",h=T)
+##get mean alignment scores for each chromosome. This assumes that synteny is conserved enough that we can consider that there will be only one high quality hit for each of them in the genome. For passerine birds this assumption is reasonable.
+table_score<-aggregate(table$score, list(table$scaffold, table$chr), mean)
+##get median position of the scaffold (to get relative positions of scaffolds)
+table_start_median_zebra<-aggregate(table$start_zebra, list(table$scaffold, table$chr), median)
+##get the most frequent orientation: i.e. are alignements of a given scaffold mostly oriented in the forward or reverse direction compared to the zebra finch chromosome?
+MaxTable <- function(InVec, mult = FALSE) {
+  if (!is.factor(InVec)) InVec <- factor(InVec)
+  A <- tabulate(InVec)
+  if (isTRUE(mult)) {
+    levels(InVec)[A == max(A)]
+  } 
+  else levels(InVec)[which.max(A)]
+}
+table_orientation<-aggregate(table$strand, list(table$scaffold, table$chr), MaxTable)
+table_finale<-cbind(table_score,table_start_median_zebra[,3],table_orientation[,3])
+colnames(table_finale)<-c("scaffold","zebra_finch_chromosome","mean_score","median_position","orientation")
+table_finale<-table_finale[order(table_finale[,1],-table_finale[,3]),]
+write.table(table_finale,file="all_statistics.out")
+### From this set of statistics, I retain for each scaffold only the best alignment.
+library(dplyr)
+group <- group_by(table_finale, scaffold) %>% filter(mean_score == max(mean_score))
+write.table(group,file="best_statistics.out")
