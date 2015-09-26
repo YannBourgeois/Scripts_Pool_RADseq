@@ -7,10 +7,28 @@ done
 bwa index Zosterops.fsa
 
 ### Perform alignment with BWA MEM
-##For GBS data (single end sequencing)
+##For Cornell's GBS data (single end sequencing)
+
 for i in *.fq.gz
-bwa mem Zosterops_genome.fsa -t 8  $i -M | samtools view -q 20 -bS - | samtools sort -  $i
+do bwa mem Zosterops_genome.fsa -t 8  $i -M | samtools view -q 20 -bS - | samtools sort -  $i
+done
+
+#Note: If you have access to a cluster, you can submit one job for each of the N alignments like this:
+for i in *.fq.gz
+do echo "bwa mem Zosterops_genome.fsa -t 8"  $i "-M | samtools view -q 20 -bS - | samtools sort -"  $i >> command_file
+done
+split -l1 command_file alignment.sh
+for i in alignment.sh*
+do qsub $i
 done
 
 
-## For paired-end sequencing (shotgun sequencing + Pooled RAD-sequencing data)
+## For paired-end sequencing (shotgun sequencing + Pooled RAD-sequencing data). Assuming your files are named Ind1_R1.fq.gz and Ind2_R2.fq.gz.
+
+for R1 in *_R1.fq.gz
+do
+  echo $R1
+  R2='echo $R1 | sed "s/_R1_/_R2_/" '
+  Name= 'echo $R1 | cut -f1 -d "_" '
+  bwa mem Zosterops_genome.fsa -t 8 $R1 $R2 -M | samtools view -q 20 -bS - | samtools sort -"  $Name 
+done
