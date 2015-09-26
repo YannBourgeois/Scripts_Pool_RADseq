@@ -14,5 +14,5 @@ chromosome 1 displays highly significant patterns of association with coloration
 distinct localities. Interestingly, this region does not seem to include any gene already
 described as affecting feather or hair color. However, several interesting candidates remain,
 all involved in intra-cellular trafficking. Our results are a further indication that even for
-simple traits such as coloration where phenotypic convergence is common, genetic
+traits such as discrete colour variation where phenotypic convergence is common, genetic
 convergence is not necessary the rule.
