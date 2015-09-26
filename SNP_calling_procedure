@@ -1,4 +1,4 @@
-### Remove adapters with Trimmomatic, v0.33. Scripts executed in UNIX shell.
+### Remove remaining adapters with Trimmomatic, v0.33. Scripts executed in UNIX shell.
 for i in *.fq.gz
 do java -Xmx5G -Xmx5G -jar ./Trimmomatic-0.33/trimmomatic-0.33.jar SE -phred33 $i trimmed_$i ILLUMINACLIP:./Trimmomatic-0.33/adapters/TruSeq2-SE.fa:2:30:10
 done
@@ -13,22 +13,35 @@ for i in *.fq.gz
 do bwa mem Zosterops_genome.fsa -t 8  $i -M | samtools view -q 20 -bS - | samtools sort -  $i
 done
 
-#Note: If you have access to a cluster, you can submit one job for each of the N alignments like this:
+#Note: If you have an access to a cluster, you can submit one job for each of the N alignments like this:
 for i in *.fq.gz
 do echo "bwa mem Zosterops_genome.fsa -t 8"  $i "-M | samtools view -q 20 -bS - | samtools sort -"  $i >> command_file
 done
+#Split the previous file in individual jobs and submit them
 split -l1 command_file alignment.sh
 for i in alignment.sh*
 do qsub $i
 done
 
 
-## For paired-end sequencing (shotgun sequencing + Pooled RAD-sequencing data). Assuming your files are named Ind1_R1.fq.gz and Ind2_R2.fq.gz.
+## For paired-end sequencing (Shotgun sequencing + Pooled RAD-sequencing data). Assuming your files are named Ind1.R1.fq.gz and Ind2.R2.fq.gz.
 
-for R1 in *_R1.fq.gz
+for R1 in *.R1.fastq.gz
 do
-  echo $R1
-  R2='echo $R1 | sed "s/_R1_/_R2_/" '
-  Name= 'echo $R1 | cut -f1 -d "_" '
-  bwa mem Zosterops_genome.fsa -t 8 $R1 $R2 -M | samtools view -q 20 -bS - | samtools sort -"  $Name 
+  Name=${R1%.R1*}
+  bwa mem Zosterops_genome.fsa -t 8 "${Name}.R1.fastq.gz"  "${Name}.R2.fastq.gz" -M | samtools view -q 20 -bS - | samtools sort -  $Name 
 done
+
+#Note: Again, if you want to submit one job for each alignment:
+for R1 in *.R1.fastq.gz
+do
+  Name=${R1%.R1*}
+  echo "bwa mem Zosterops_genome.fsa -t 8" "${Name}.R1.fastq.gz"  "${Name}.R2.fastq.gz" "-M | samtools view -q 20 -bS - | samtools sort -"  $Name >> command_file alignment.sh
+done
+
+split -l1 command_file alignment.sh
+for i in alignment.sh*
+do qsub $i
+done
+
+
