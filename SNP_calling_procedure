@@ -36,12 +36,30 @@ done
 for R1 in *.R1.fastq.gz
 do
   Name=${R1%.R1*}
-  echo "bwa mem Zosterops_genome.fsa -t 8" "${Name}.R1.fastq.gz"  "${Name}.R2.fastq.gz" "-M | samtools view -q 20 -bS - | samtools sort -"  $Name >> command_file alignment.sh
+  echo "bwa mem Zosterops_genome.fsa -t 8" "${Name}.R1.fastq.gz"  "${Name}.R2.fastq.gz" "-M | samtools view -q 20 -bS - | samtools sort -"  $Name >> command_file 
 done
 
 split -l1 command_file alignment.sh
 for i in alignment.sh*
 do qsub $i
 done
+# move all bam in bam_with_duplicates directory
+mkdir bam_with_duplicates
+mv *bam bam_with_duplicates
+### Add read group and remove duplicates. Use bamaddrg from bamtools (Erik Garrison)
+
+for bam in ./bam_with_duplicates/*bam
+do
+	Name=${bam%.bam}
+	echo "./bamaddrg -b" $bam "-s" $Name "| ./samtools-0.1.19/samtools rmdup - " ${Name}_rmdup.bam >> command_file_rmdup
+done
+split -l1 command_file_rmdup rmdup.sh
+for i in rmdup.sh*
+do qsub $i
+done
+
+### SNP calling using freeBayes (Erik Garrison)
+
+### SNP filtering
 
 
