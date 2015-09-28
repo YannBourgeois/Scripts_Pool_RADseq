@@ -6,9 +6,11 @@ do java -Xmx5G -Xmx5G -jar ./Trimmomatic-0.33/trimmomatic-0.33.jar SE -phred33 $
 done
 
 ### Index reference genome (Zosterops.fsa)
+#If multiline fasta, use this awk script so each scaffold consists of two lines (header+sequence)
+# awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' < file_to_split.fsa > file_splitted.fsa
 bwa index Zosterops.fsa
 
-### Perform alignment with BWA MEM
+### Perform alignment with BWA MEM (ALN is now deprecated)
 ##For Cornell's GBS data (single end sequencing)
 
 for i in *.fq.gz
@@ -61,7 +63,21 @@ do qsub $i
 done
 
 ### SNP calling using freeBayes (Erik Garrison)
-## To speed up the process, it is recommanded to run several jobs on portions of the genome.
+## To speed up the process (for whole genome sequencing), it is recommended to run several small jobs on portions of the genome (-t option in freebayes).
+## For this, bed files listing all scaffolds and regions to be covered 
+## need to be provided. This can also be used to call SNPs only on a few regions of interests. 
+## To get lengths of all the scaffolds in a reference fasta file file.fa, run:
+awk '/^>/ {if (seqlen){print seqlen};print;seqtotal+=seqlen;seqlen=0;seq+=1;next;}
+    {seqlen=seqlen+length($0)}
+    END{print seqlen;print seq" sequences, total length " seqtotal+seqlen}' file.fa
+
+## Then for each bed file (format: sequence_name	start_pos	end_pos):
+## To list all bam files on one single line:
+ls *bam | tr "\n" " " 
+## This gives a list,e.g.: file1.bam file2.bam file3.bam
+## Then copy and paste so you call SNPs on all bam files:
+
+./freebayes -f Zosterops_genome.fsa file1.bam file2.bam file3.bam -t file_1.bed --genotype-qualities > SNPs_raw_1.vcf
 
 ### SNP filtering
 
