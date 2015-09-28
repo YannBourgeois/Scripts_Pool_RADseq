@@ -50,6 +50,7 @@ done
 # move all bam in bam_with_duplicates directory
 mkdir bam_with_duplicates
 mv *bam bam_with_duplicates
+
 ### Add read group and remove duplicates. Use bamaddrg from bamtools (Erik Garrison)
 
 for bam in ./bam_with_duplicates/*bam
@@ -61,6 +62,16 @@ split -l1 command_file_rmdup rmdup.sh
 for i in rmdup.sh*
 do qsub $i
 done
+
+### Check a few statistics about an alignment (e.g. file1.bam):
+samtools flagstat file1.bam
+
+### For pooled datasets, production of a mpileup file is needed for analyses in R
+samtools mpileup -B BO-BBH.rmdup.bam BO-GRY.rmdup.bam TE-BBH.rmdup.bam TE-GRY.rmdup.bam VO-BBH.rmdup.bam VO-GRY.rmdup.bam MO-BGH.rmdup.bam 3C-BGH.rmdup.bam BV-BBN.rmdup.bam CO-BBN.rmdup.bam ERM-BBH.rmdup.bam ES-BBH.rmdup.bam MA-BEL.rmdup.bam > All_13_pops.mpileup
+### Sync of the files using a java sript from popoolation 2. Beware that mpileup files are really heavy (more than 200 Gb)
+java -ea -Xmx12g -jar ./mpileup2sync.jar --input All_13_pops.mpileup --output All_13_pops.sync --fastq-type sanger --min-qual 20 --threads 8
+
+
 
 ### SNP calling using freeBayes (Erik Garrison)
 ## To speed up the process (for whole genome sequencing), it is recommended to run several small jobs on portions of the genome (-t option in freebayes).
@@ -79,6 +90,24 @@ ls *bam | tr "\n" " "
 
 ./freebayes -f Zosterops_genome.fsa file1.bam file2.bam file3.bam -t file_1.bed --genotype-qualities > SNPs_raw_1.vcf
 
-### SNP filtering
+### SNP filtering: this is only an example. Parameters should be adapted according to mean depth of coverage and number of missing genotypes. It is
+### necessary to play a bit at this stage so you can have an idea of how confident you can be with your SNPs. Be careful that Z markers should be removed in
+### first analyses.
+vcftools --vcf SNPs_raw_1.vcf --minQ 20 --minGQ 30 --min-meanDP 10 --max-meanDP 35 --max-missing 0.7 --min-alleles 2 --max-alleles 3 --remove-indels --recode --recode-INFO-all --out SNPs_filtered_1.vcf
+ 
+ 
+### Some packages (e.g. PopGenome) do not like MNPs or complex variants. It can be useful to have a vcf with only SNPs or MNPs
+### divided into SNPs. Use the script in vcftools vcfallelicprimitives:
+./vcfallelicprimitives SNPs_filtered_1.vcf > SNPs_splitted_1.vcf 
+
+
+### To check for large deletions or verify that some SNPs do not fall in repetitive regions, it is useful to check the sequencing depth or the coverage.
+### Use for that bedtools (http://bedtools.readthedocs.org/en/latest/). Again it is necessary to produce a bed file (-b) for the region of interest:
+## This script gives the percentage of each feature in the bed file covered by at least one read (coverage)
+coverageBed -abam file1.bam -b file_to_check_coverage.bed > file1_cov.out
+## This script gives the number of reads at each position for each feature in the bed file (depth, option -d)
+coverageBed -abam file1.bam -b file_to_check_coverage.bed -d > file1_depth.out
+
+### Now you should have vcf file or mpileup data, that can be converted and used for analyses.
 
 
