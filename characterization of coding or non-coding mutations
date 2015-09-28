@@ -1,9 +1,23 @@
-### Annotation performed using SNPdat and annotation provided by 
+### Annotation to be performed using SNPdat and annotation provided by Cornetti et al.
 ### https://code.google.com/p/snpdat/
 
 ### Detection of regulatory motifs: 
-###MEME suite (http://meme-suite.org/), 
-###MATCH (http://www.gene-regulation.com/pub/programs.html), 
-###HOMER (http://homer.salk.edu/homer/motif/)
+### MEME suite (http://meme-suite.org/), 
+### MATCH (http://www.gene-regulation.com/pub/programs.html), 
+### HOMER (http://homer.salk.edu/homer/motif/)
 ## Subsetting vcf file to extract all SNPs found in regulatory regions.
+## MITF is a transcription factor known to interact with many melanogenesis genes through E-box (CAYRTG) and M-box (TCAYRTG or CAYRTGA).
+## The goal here is to retrieve these sequences in the reference genome and check whether there is any associated SNP inside.
+## Installation of HOMER: http://homer.salk.edu/homer/introduction/install.html
 
+./ scanMotifGenomeWide.pl ./motifs/mitf.motif ../Zosterops_genome.fsa -bed > MITF.bed
+./ scanMotifGenomeWide.pl ./motifs/ebox.motif ../Zosterops_genome.fsa -bed > EBOX.bed
+sort -k1,1 -k2,2n MITF.bed > MITF.sorted.bed
+sort -k1,1 -k2,2n EBOX.bed > EBOX.sorted.bed
+
+## To visualize the output, you need to prepare for UCSC format: a nice set of scripts can be found here:
+## http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/
+## Download bedToBigbed
+wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/bedToBigBed
+chmod +x bedToBigBed
+./bedToBigBed MITF.sorted.bed scaffolds.size MITF.bigBed
