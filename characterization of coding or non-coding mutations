@@ -1,2 +1,9 @@
 ### Annotation performed using SNPdat and annotation provided by 
 ### https://code.google.com/p/snpdat/
+
+### Detection of regulatory motifs: 
+###MEME suite (http://meme-suite.org/), 
+###MATCH (http://www.gene-regulation.com/pub/programs.html), 
+###HOMER (http://homer.salk.edu/homer/motif/)
+## Subsetting vcf file to extract all SNPs found in regulatory regions.
+
