@@ -63,6 +63,11 @@ for i in rmdup.sh*
 do qsub $i
 done
 
+### Index bam files
+for i in *.bam
+do samtools index $i
+done
+
 ### Check a few statistics about an alignment (e.g. file1.bam):
 samtools flagstat file1.bam
 
