@@ -1,0 +1,40 @@
+### XP-CLR (http://genetics.med.harvard.edu/reich/Reich_Lab/Software.html) is a powerful test allowing to detect selective sweeps by scanning allele frequency spectrum changes at linked loci between two populations
+### It requires files to be in a specific format (as usual in bioinformatics. Could you imagine a world where every software uses, for example, vcf format?)
+### In this example, we start from a vcf with allele calls (file1.vcf). In Population1.txt is a list of individuals from one of the populations to compare.
+vcftools --vcf file.vcf --keep ../Population1.txt  --012 --out Population1
+
+ awk '
+{ 
+    for (i=1; i<=NF; i++)  {
+        a[NR,i] = $i
+    }
+}
+NF>p { p = NF }
+END {    
+    for(j=1; j<=p; j++) {
+        str=a[1,j]
+        for(i=2; i<=NR; i++){
+            str=str" "a[i,j];
+        }
+        print str
+    }
+}' Population1.012 > Population1.out
+ 
+ 
+ sed -i -e "s:0:0 0:g" Population1.out
+ sed -i -e "s:-1:9 9:g" Population1.out
+ sed -i -e "s:1:0 1:g" Population1.out
+ sed -i -e "s:2:1 1:g" Population1.out
+ tail -n +2 Population1.out > Population1.clr
+ 
+ ###Population1.clr should contain the genotype data in the right format. Proceed the same way for all the .012 files that you need.
+ ### A map file is also needed and can be obtained "easily" from the .vcf
+ 
+grep -v "#" file.vcf | cut -f2 > SNP_position
+grep -v "#" file.vcf | cut -f1 > chromosome_name
+grep -v "#" file.vcf | cut -f4,5 > SNP_alleles
+cat SNP_position | while read i; do echo "scale = 9; $i/100000000" | bc; done > SNP_position_centimorgan
+paste SNP_position chromosome_name SNP_position_centimorgan SNP_position SNP_alleles > file_for_XPCLR.map
+
+
+ 
