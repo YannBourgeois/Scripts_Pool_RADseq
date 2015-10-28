@@ -1,0 +1,50 @@
+nn<-read.table("data.n",h=F)
+yy<-read.table("data.y",h=F)
+
+## Association analysis
+pval=matrix(NA,nrow(yy),3)
+for (i in 1:3){
+p1=2*(i-1) + 1 ; p2=p1+1
+f1=yy[,p1]/nn[,p1] ; f2=yy[,p2]/nn[,p2]
+ff=(yy[,p1] + yy[,p2])/(nn[,p1] + nn[,p2])
+uu=(f1-f2)/sqrt(ff*(1-ff)*((1/nn[,p1]) + (1/nn[,p2])))
+pval[,i]=pnorm(-1*abs(uu))
+tmp_sel= !(is.na(pval[,i]))
+}
+
+##Writing of a file containing consensuses found significant in at least two of three
+comparisons
+sel = rowSums(pval<0.0000001,na.rm=T)>1
+#det_mrk=read.table("data.alleles")
+det_mrk[sel,]
+write.table(file="tmp.snphot",det_mrk[sel,1:2],quote=F,col.names=F,row.names=F)
+
+##Analysis on localities pooled by morph.
+yytotal=nntotal=matrix(NA,nrow(yy),2)
+for (i in 1:nrow(yy)){
+yytotal[i,1]=sum(yy[i,1],yy[i,3],yy[i,5])
+yytotal[i,2]=sum(yy[i,2],yy[i,4],yy[i,6])
+nntotal[i,1]=sum(nn[i,1],nn[i,3],nn[i,5])
+nntotal[i,2]=sum(nn[i,2],nn[i,4],nn[i,6])
+}
+pval2=qval2=matrix(NA,nrow(yytotal),1)
+for(i in 1:1){
+p1=2*(i-1) + 1 ; p2=p1+1
+f1=yytotal[,p1]/nntotal[,p1] ; f2=yytotal[,p2]/nntotal[,p2]
+ff=(yytotal[,p1] + yytotal[,p2])/(nntotal[,p1] + nntotal[,p2])
+uu=(f1-f2)/sqrt(ff*(1-ff)*((1/nntotal[,p1]) + (1/nntotal[,p2])))
+pval2[,i]=pnorm(uu)
+tmp_sel= !(is.na(pval2[,i]))
+}
+
+nrow(pval2)
+##1147764 polymorphic SNPs
+
+table<-cbind(det_mrk,pval,pval2)
+write.table(table,file="p-values.txt")
+
+### Generate a file with the right relative order for SNPs on zebra finch reference using LASTZ results
+order<-read.table("best_statistics.out",h=T)
+table<-read.table("p-values.txt") 
+concatenated<-merge(table,order,by="scaffold")
+concatenated<-concatenated[order(concatenated$zebra_finch_chromosome,concatenated$median_position,concatenated$position*concatenated$orientation),]
