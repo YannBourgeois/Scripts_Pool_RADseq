@@ -1,0 +1,10 @@
+##In vcftools
+vcftools --vcf association.vcf --geno-r2 --ld-window-bp 50000 --out r2 
+
+##In R
+table<-read.table("r2.geno.ld",h=T)
+table<-na.omit(table)
+table$dist<-(table$POS2-table$POS1)/1000
+table$grp <- cut(table$dist, 0:50) ## bin 50kb
+
+r2means <- with (table, tapply(table$R2, table$grp, FUN = mean)) ##r2 mean every 1kb
