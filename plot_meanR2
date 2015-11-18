@@ -7,4 +7,4 @@ table<-na.omit(table)
 table$dist<-(table$POS2-table$POS1)/1000
 table$grp <- cut(table$dist, 0:50) ## bin 50kb
 
-r2means <- with (table, tapply(table$R2, table$grp, FUN = mean)) ##r2 mean every 1kb
+r2means <- with (table, tapply(table$R^2, table$grp, FUN = mean)) ##r2 mean every 1kb
