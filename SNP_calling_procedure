@@ -87,7 +87,8 @@ awk '/^>/ {if (seqlen){print seqlen};print;seqtotal+=seqlen;seqlen=0;seq+=1;next
     {seqlen=seqlen+length($0)}
     END{print seqlen;print seq" sequences, total length " seqtotal+seqlen}' file.fa
 
-## Then for each bed file (format: sequence_name	start_pos	end_pos):
+## Then for each bed file, remove empty lines if any (format: sequence_name	start_pos	end_pos):
+sed -i '/^$/d' file*.bed
 ## To list all bam files on one single line:
 ls *bam | tr "\n" " " 
 ## This gives a list,e.g.: file1.bam file2.bam file3.bam
