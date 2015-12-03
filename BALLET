@@ -1,0 +1,89 @@
+estimate population recombination rate in LDhat
+take allele in the canadian clone as ancestral (outrgoup)
+use these files to scan scaffold 944
+
+
+Scan scaffold 944 with sweep tools
+
+
+Extract for the european ingroup allele counts
+
+vcftools --counts --keep tokeep --max-alleles 2 --min-alleles 2 --vcf All.vcf --out Europe
+
+Extract for the outgroup allele counts
+
+vcftools --counts --keep outgroup --max-alleles 2 --min-alleles 2 --vcf All.vcf --out outgroup
+sed -i -e "s/:/\t/g" Europe.frq.count
+sed -i -e "s/:/\t/g" outgroup.frq.count
+
+Modifier headers
+Définir comme allèle ancestral (x)l'allèle présent dans la population russe
+1) enlever les hétérozygotes ancestraux et allèles non couverts
+outgroup<-read.table("outgroup.frq.count",h=T)
+Europe<-read.table("Europe.frq.count",h=T)
+
+#outgroup2<-subset(outgroup,outgroup$Count1+outgroup$Count2==2 & outgroup$Count1 !=1)
+
+Allele1<-subset(outgroup,outgroup$Count1==2)
+Allele2<-subset(outgroup,outgroup$Count2==2)
+
+Orientate1<-merge(Allele1,Europe,by=c("CHROM","POS"))
+Orientate2<-merge(Allele2,Europe,by=c("CHROM","POS"))
+
+2) si allele_1_outgroup=2 then x=allele_1
+File1<-Orientate1[,c("CHROM","POS","Count1.y","N_CHR.y")]
+File2<-Orientate2[,c("CHROM","POS","Count2.y","N_CHR.y")]
+
+
+File1<-subset(File1,Count1.y<N_CHR.y)
+File2<-subset(File2,Count2.y<N_CHR.y)
+colnames(File2)<-c("CHROM","POS","Count1.y","N_CHR.y")
+File<-rbind(File1,File2)
+File<-File[order(File$CHROM,File$POS),]
+write.table(File,file="Pol_file.out")
+
+3) generate estimate of recombination rate for the locus of interest: take as a first approximation a rate of 0.001/pb (4Nr, avec N=10,000 et r=2.5.10-8) 
+
+
+
+4) and estimates of 4N*mu (0.001)
+
+gcc ballet_v1_0.c -o BALLET -lm -lgsl -lgslcblas
+
+cut -f3,4,5 -d " " Pol_file.out > Input_combined.ballet
+#change headers position x n
+sed -i -e "s: :\t:g" Input_combined.ballet
+dos2unix Input_combined.ballet
+
+
+K= 103821219
+according to PopGenome for the vcf used here
+4Nu= 0.05
+
+./BALLET -inter_coal_time Input_combined.ballet 103821219 0.0005 DivFile
+./BALLET -poly_sub Input_combined.ballet PolySubFile
+./BALLET -spect Input_combined.ballet SpectFile
+
+
+dos2unix resistance.out
+dos2unix recombination_resistance.out
+./BALLET -T1 100 DivFile PolySubFile resistance.out recombination_resistance.out T1_test
+./BALLET -T2 100 DivFile PolySubFile SpectFile resistance.out recombination_resistance.out /home/ybourgeois/work/PopGenome/simulated_spectra/simulated_spectra/ T2_test
+
+#$ -q workq
+#$ -l h_vmem=32G -l mem=32G
+./BALLET -T1 100 DivFile PolySubFile resistance.out recombination_resistance.out T1_test
+
+#$ -q workq
+#$ -l h_vmem=32G -l mem=32G
+./BALLET -T2 100 DivFile PolySubFile SpectFile resistance.out recombination_resistance.out /home/ybourgeois/work/PopGenome/simulated_spectra/simulated_spectra/ T2_test
+
+
+
+merge(x, y, by=c("k1","k2"))
+
+
+
+scaffold03397   73374   2       84      A:76    G:8
+scaffold03397   73376   2       88      T:87    C:1
+
