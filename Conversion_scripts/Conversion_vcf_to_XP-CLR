@@ -36,5 +36,44 @@ grep -v "#" file.vcf | cut -f4,5 > SNP_alleles
 cat SNP_position | while read i; do echo "scale = 9; $i/100000000" | bc; done > SNP_position_centimorgan
 paste SNP_position chromosome_name SNP_position_centimorgan SNP_position SNP_alleles > file_for_XPCLR.map
 
+XPCLR -xpclr europa.out extreme.out file_for_XPCLR.map result_extreme_europe -w1 snpWin gridSize chrN 
+./XPCLR/bin/XPCLR -xpclr europa.out extreme.out file_for_XPCLR.map result_extreme_europe -w1 0.005 200 2000 944 -p0 0.95
+
+
+       -p corrLevel
+-xpclr:		specify the input file format.[XpCLR accepts several other 
+                 input formats, but currently they haven't been checked 
+                 carefully yet.]
+genofile1:	genotype input for object population
+genofile2:	genotype input for reference population
+mapfile:	snp information file (for SNPs from a single chromosome) 
+outputfile:	The format is illustrated in next section.
+-w1:		set it to "-w1"
+gWin:		the size of a window (in units of Morgan). If the window size is
+                 not too small, the performance of XPCLR doesn't depend on the 
+                 size. A reasonable choice is 0.005.
+snpWin:		maximum # of SNPs within a window. XPCLR score depends on the 
+                 number of SNPs. To make the XP-CLR scores comparable between
+                 regions, it is necessary to control the maximum number of SNPs
+                 within a single window. The choice of snp # depends on the 
+                 SNP density of your data.
+gridSize:	the spacing between two grid points. It is in unit of bp.
+chrN:		the chromosome number.
+-p: "-p1": 	specify this if the genotype data is already phased.
+    "-p0": 	specify this if the genotype data is unphased.
+		The phase information of the genotype is used only if 
+                 corrLevel is set to be >0. When corrLevel >0, the XP-CLR score 
+                 is estimated using a weighted scheme. The weights come from
+                 the pairwise correlation between SNPs in the reference pop.
+                 If "p1", the phased data will be used to estimate pairwise 
+                 correlation coefficient directly; if "p0", pairwise correlation
+                 coefficients are estimated with an EM algorithm.  
+corrLevel:	the range of its value is on [0 1]. If it is on (0 1], this 
+                 corrLevel value is used as a criterion in the weighted 
+                 composite likelihood ratio test. If two SNPs are highly 
+                 correlated (r2 > corrLevel), their contribution to XPCLR 
+                 is down-weighted. 
+                 If corrLevel is set to be 0, XPCLR is estimated un-weightedly.
+
 
  
