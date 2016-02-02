@@ -1,0 +1,43 @@
+### Phase vcf for scaffold 40 with shapeit (cf whole genomes association scripts)
+
+vcftools --vcf scaffold_40_splitted.recode.vcf --max-alleles 2 --min-alleles 2  --remove-indels --mac 1 --recode --recode-INFO-all --out scaffold_40_splitted_wo_indel
+shapeit --input-vcf scaffold_40_splitted_wo_indel.recode.vcf -O scaffold40_EHH.phased
+
+### In R: create file in ARGWeaver format. Extract only the 6 unrelated genomes (parents from the 3 families)
+table<-read.table("scaffold40_EHH.phased.haps",h=F)
+table[,6:29] <- lapply(table[,6:29], function(x, value,value2) ifelse(x == 0, value, value2), value = as.character(table[,4]),value2 = as.character(table[,5]))
+write.table(table[,c(3,8,9,14,15,18:23,26,27)],file="Input_ARGWeaver_6ind.out",row.names=F)
+
+arg-sample \
+-s ./Input_ARGWeaver_6ind.out \
+-N 100000 -r 5e-9 -m 3.6e-9 \
+--ntimes 20 --maxtime 1e6 -c 10 -n 1000 \
+-o ./test/6ind
+
+for i in ./test/6ind*.gz
+do smc2bed $i > $i.bed
+done
+
+sort-bed 6ind.1000.smc.gz.bed >6ind.bed
+bgzip 6ind.bed
+tabix -f 6ind.bed.gz
+arg-summarize -a 6ind.bed.gz -T -B -R -K -H -F -P -Z -M > statistics_6inds.txt
+
+### In R, plot statistics
+##function for sliding windows
+
+slideFunct <- function(data, window, step){
+  total <- length(data)
+  spots <- seq(from=1, to=(total-window), by=step)
+  result <- vector(length = length(spots))
+  for(i in 1:length(spots)){
+  result[i] <- mean(data[spots[i]:(spots[i]+window)])
+  }
+  return(result)
+}
+
+table<-read.table("statistics_6inds.txt",h=T)
+tmrca<-slideFunct(table$tmrca_half_mean,60,60)
+pos<-slideFunct(table$chromStart,60,60)
+plot(pos,tmrca,xlab="Position on scaffold 40",ylab="Mean half TMRCA",type="l")
+lines(supsmu(pos,tmrca),col="red",lwd=3)
