@@ -1,0 +1,41 @@
+###alignment (example on individual 11-869)
+bwa mem Zosterops_genome.fsa -t 8  11-869_R1.fastq.gz 11-869_R2.fastq.gz -M | samtools view -q 20 -bS - | samtools sort -  11-869
+##Calling
+for i in *rmdup.bam
+do samtools index $i
+done
+./freebayes -f Zosterops_genome.fsa 11-869_rmdup.bam  1430_rmdup.bam  1579_rmdup.bam  1685_rmdup.bam  314_rmdup.bam  319_rmdup.bam 1337_rmdup.bam    1434_rmdup.bam  1588_rmdup.          bam  1708_rmdup.bam  317_rmdup.bam  320_rmdup.bam --genotype-qualities > complete_SNPs.vcf
+
+### annotation for scaffold 40 with SNPdat
+
+##Filter on scaffold 40 in vcftools: --minQ 20 --minGQ 20 --min-meanDP 6 --max-meanDP 20 --max-missing 0.7 --min-alleles 2  --recode --recode-INFO-all
+./vcfallelicprimitives scaffold_40_filtered.recode.vcf > scaffold_40_splitted.recode.vcf
+
+perl ./SNPdat_v1.0.5.pl -i scaffold_40_splitted.recode.vcf -f scaffold_40.fa -g scaffold_40.gtf
+
+
+### Association in Lamp
+
+vcftools --vcf scaffold_40_splitted.recode.vcf --plink --out splitted_for_plamp
+#edit manually to add pedigree info
+
+./plink-1.07-x86_64/plink --file splitted_for_plamp --noweb --make-bed --out splitted_for_plamp
+
+
+./king -b splitted_for_plamp.bed --merlin
+#king.dat
+#king.ped
+#king.map
+
+./lamp/lamp -d king.dat -p king.ped -c king.map --prev 0.333 -f none --recessive > association_Plamp_splitted.out
+
+###413 mendelian transmission errors over 91664 SNPs.
+### Output SNPdat: consider only CDS.
+
+### Kinship coefficients estimation on 10,000 random autosomal SNPs (subset_king.vcf)
+vcftools --vcf subset_king.vcf --plink --out subset_king
+./plink-1.07-x86_64/plink --file subset_king --noweb --make-bed --out subset_king
+./king -b subset_king.bed --kinship
+
+./king -b splitted_for_plamp.bed --merlin
+
