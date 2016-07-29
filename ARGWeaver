@@ -15,8 +15,12 @@ arg-sample \
 -o ./test/6ind
 
 for i in ./test/6ind*.gz
-do smc2bed $i > $i.bed
+do 
+  Name=${i%.smc*}
+  Name=${Name##*.}
+  smc2bed --sample ${Name} $i > $i.bed
 done
+
 
 sort-bed 6ind.1000.smc.gz.bed >6ind.bed
 bgzip 6ind.bed
