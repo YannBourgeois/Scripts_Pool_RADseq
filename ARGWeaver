@@ -25,7 +25,7 @@ done
 sort-bed *.smc.gz.bed >6ind.bed
 bgzip 6ind.bed
 tabix -f 6ind.bed.gz
-arg-summarize -a 6ind.bed.gz -T -B -R -K -H -F -P -S -Q -Z -M > statistics_6inds.txt
+arg-summarize -a 6ind.bed.gz -T -B -R -K -H -F -P -S -Q 0.025,0.5,0.0975 -Z -M > statistics_6inds.txt
 
 ### In R, plot statistics
 ##function for sliding windows
